@@ -62,17 +62,21 @@ export class GeminiService {
     return generated.map((row, y) => 
         row.map((color, x) => {
             const zone = blueprint[y]?.[x] || 'none';
-            const isTransparent = !color || color === 'transparent' || color === 'none';
+            // Determine if the color is considered transparent (or empty)
+            const isTransparent = !color || color.toLowerCase() === 'transparent' || color.toLowerCase() === 'none' || color === '';
             
-            // If the AI gave us a valid color, keep it
+            // 1. If the AI gave us a valid solid color, ALWAYS KEEP IT.
+            // (Even if the blueprint zone was 'none', we let the AI hallucinate details)
             if (!isTransparent) return color;
 
-            // If the AI gave transparency, but the blueprint says there SHOULD be something here,
-            // we enforce a fallback color so the asset is not invisible.
+            // 2. If the AI gave transparency, but the blueprint says there SHOULD be a solid zone here:
+            // This means the AI failed to fill out the blueprint constraint. 
+            // Only in this case do we enforce a fallback color.
             if (zone !== 'none') {
                 return FALLBACK_COLORS[zone] || '#808080';
             }
 
+            // 3. Otherwise, it is correctly transparent.
             return 'transparent';
         })
     );
@@ -98,8 +102,8 @@ export class GeminiService {
     }
 
     // 3. Fix potential single quotes (Python style) to double quotes for valid JSON
-    // Note: This is safe because hex codes and 'transparent' don't contain internal quotes.
-    clean = clean.replace(/'/g, '"');
+    // Note: only replace quotes that are wrapping values, not inside hex codes.
+    clean = clean.replace(/'(?=[^\]}]*(?:\[|\{|$))/g, '"');
 
     return clean;
   }
@@ -246,7 +250,8 @@ export class GeminiService {
         - 'r'/'l' = Hands
         - 'L' = Legs
         
-        CRITICAL: FILL the anatomy with colors matching the description.
+        CRITICAL: FILL the anatomy with colors matching the description. 
+        DO NOT leave the designated anatomy symbols transparent.
         `;
     }
 
@@ -257,9 +262,9 @@ export class GeminiService {
       Your goal is to fill a 32x32 grid with hex colors based on an ASCII structural map.
       
       RULES:
-      1. OUTPUT: JSON array of 32 arrays (rows). Each row contains 32 hex strings.
+      1. OUTPUT: JSON array of 32 arrays (rows). Each row contains 32 hex strings (e.g., "#FF0000" or "transparent").
       2. BACKGROUND: Use "transparent" for '.' (dots) in the ASCII map.
-      3. FOREGROUND: You MUST provide a hex color (e.g., "#FF0000") for every non-dot character in the map.
+      3. FOREGROUND: You MUST provide a valid hex color for EVERY non-dot character in the map. NEVER use "transparent" where a structure exists.
       4. STYLE: High contrast, vivid fantasy RPG style. 32x32 resolution.
       
       ${specificInstruction}

@@ -32,6 +32,14 @@ export class GeminiService {
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   }
 
+  public updateApiKey(key: string) {
+    if (key) {
+      this.ai = new GoogleGenAI({ apiKey: key });
+    } else {
+      this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    }
+  }
+
   // Converts the blueprint into a visual ASCII grid for the AI to "see"
   private gridToAscii(blueprint: ZoneType[][]): string {
     const map: Record<ZoneType, string> = {

@@ -32,6 +32,14 @@ const EQUIP_SLOTS = [
 ];
 
 export default function App() {
+  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('pixelforge_api_key') || '');
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('pixelforge_api_key', apiKey);
+    geminiService.updateApiKey(apiKey);
+  }, [apiKey]);
+
   const [assets, setAssets] = useState<Asset[]>([]);
   const [prompt, setPrompt] = useState('');
   
@@ -237,6 +245,9 @@ export default function App() {
           <h1 className="text-sm font-bold tracking-widest text-zinc-100 uppercase">Pixel<span className="text-amber-500">Forge</span> AI</h1>
         </div>
         <div className="flex items-center gap-4">
+            <button onClick={() => setShowSettings(true)} className="p-1.5 text-zinc-400 hover:text-amber-500 transition-colors" title="Settings">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </button>
             <span className="text-xs text-zinc-500 font-mono hidden sm:block">v3.1.0_WORKBENCH</span>
             <div className={`px-2 py-0.5 rounded-full border text-[10px] uppercase font-bold tracking-wider flex items-center gap-2 ${processingCount > 0 ? 'bg-amber-500/10 border-amber-500/50 text-amber-500' : 'bg-zinc-900 border-zinc-800 text-zinc-600'}`}>
                 {processingCount > 0 && <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping" />}
@@ -530,6 +541,40 @@ export default function App() {
         </div>
       )}
 
+      {/* --- SETTINGS MODAL --- */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
+            <div className="relative bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden w-full max-w-md p-6 animate-in zoom-in-95 duration-300">
+                <h2 className="text-lg font-bold text-zinc-100 mb-4 uppercase tracking-widest">Settings</h2>
+                
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2">Gemini API Key</label>
+                        <input 
+                            type="password"
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder="AIzaSy..."
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-amber-500"
+                        />
+                        <p className="text-[10px] text-zinc-600 mt-2 leading-relaxed">
+                            Your API key is stored safely in your browser's LocalStorage. If left empty, PixelForge will fall back to the environment variable.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-8 flex justify-end">
+                    <button 
+                        onClick={() => setShowSettings(false)}
+                        className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-black font-bold text-xs uppercase tracking-widest rounded-lg transition-colors"
+                    >
+                        Save & Close
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 }
